@@ -33,17 +33,17 @@ def add_layers(structure,nlayer,length,direction):
             new_st_added_layers.add_atom(st.symbols[iatom],st.positions[iatom]+st.lattice.cell[direction]*ilayer)
     #new_structure = pychemia.core.Structure(symbols=new_structure.symbols, cell=newlattice.cell, positions=new_structure.positions)
     new_st_added_layers.sort_sites()
-    n_unique_layers = len(np.unique(st.positions[:,direction]))
-    vacuum = np.zeros(3)
-    vacuum[direction] = length
-    alpha = st.lattice.alpha
-    beta = st.lattice.beta
-    gamma = st.lattice.gamma
-    newlenghts = st.lattice.lengths + vacuum
-    a = newlenghts[0]
-    b = newlenghts[1]
-    c = newlenghts[2]
-    newlattice = st.lattice.from_parameters_to_cell(a, b, c, alpha, beta, gamma)
+    n_unique_layers = len(np.unique(st.positions[:,direction].round(decimals=2)))
+#    vacuum = np.zeros(3)
+#    vacuum[direction] = length
+#    alpha = st.lattice.alpha
+#    beta = st.lattice.beta
+#    gamma = st.lattice.gamma
+#    newlenghts = st.lattice.lengths + vacuum
+#    a = newlenghts[0]
+#    b = newlenghts[1]
+#    c = newlenghts[2]
+#    newlattice = st.lattice.from_parameters_to_cell(a, b, c, alpha, beta, gamma)
     structures = []
 
     for i in range(1,n_unique_layers+1):
@@ -57,6 +57,10 @@ def add_layers(structure,nlayer,length,direction):
 
 
         temp_st = remove_atom(temp_st,indices=indices)
+        a = temp_st.lattice.lengths[0]
+        b = temp_st.lattice.lengths[1]
+        c = max(temp_st.positions[:,direction][temp_st.positions[:,direction] < item])
+        newlattice = st.lattice.from_parameters_to_cell(a, b, c, alpha, beta, gamma)
         new_structure = pychemia.core.Structure(symbols=temp_st.symbols, cell=newlattice.cell, positions=temp_st.positions)
 
         structures.append(new_structure)
@@ -64,25 +68,27 @@ def add_layers(structure,nlayer,length,direction):
 
 
 
-rf = open("129-2_FeTe_000000000000000111166.json")
-data = json.load(rf)
-rf.close()
-
-formula = [x for x in data][0]
-_id = data[formula]['_id']
-
-dbsettings={'host'  : 'mongo01.systems.wvu.edu', 
-            'name'  : 'PyChemiaMasterDB', 
-            'user'  : 'guest', 
-            'passwd': 'aldo', 
-            'ssl'   : True}
-pcdb=pychemia.db.get_database(dbsettings)
-
-st = pcdb.get_structure(_id)
+#rf = open("129-2_FeTe_000000000000000111166.json")
+#data = json.load(rf)
+#rf.close()
+#
+#formula = [x for x in data][0]
+#_id = data[formula]['_id']
+#
+#dbsettings={'host'  : 'mongo01.systems.wvu.edu', 
+#            'name'  : 'PyChemiaMasterDB', 
+#            'user'  : 'guest', 
+#            'passwd': 'aldo', 
+#            'ssl'   : True}
+#pcdb=pychemia.db.get_database(dbsettings)
+#
+#st = pcdb.get_structure(_id)
+#pychemia.code.vasp.write_poscar(st,"POSCAR")
+st = pychemia.code.vasp.read_poscar("POSCAR")
 cs = pychemia.crystal.CrystalSymmetry(st)
 st = cs.refine_cell()
 
-pychemia.code.vasp.write_poscar(st,"POSCAR")
+
 
 structures = add_layers(st,nlayer=2,length=15,direction=2)
 i = 0
