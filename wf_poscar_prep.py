@@ -30,19 +30,18 @@ def add_layers(structure,nlayer,length,direction):
     c = st.lattice.c*(layers[2])
     newlattice = st.lattice.from_parameters_to_cell(a, b, c, alpha, beta, gamma)
     new_st_added_layers = pychemia.core.Structure(symbols=st.symbols, cell=newlattice.cell, positions=st.positions)
-    natom = len(st.positions)
     for ilayer in range(1,nlayer):
-        for iatom in range(natom) :
+        for iatom in range(st.natom) :
             new_st_added_layers.add_atom(st.symbols[iatom],st.positions[iatom]+st.lattice.cell[direction]*ilayer)
     new_st_added_layers.sort_sites()
     pychemia.code.vasp.write_poscar(new_st_added_layers,"added_layer.vasp",direct=True)
-    n_unique_layers = len(np.unique(st.positions[:,direction].round(decimals=3)))
+    n_unique_layers = len(np.unique(st.positions[:,direction].round(decimals=4)))
     structures = []
 
     for i in range(1,n_unique_layers+1):
         temp_st = new_st_added_layers.copy()
         item = np.unique(temp_st.positions[:,direction])[i*-1]
-        layer_index = temp_st.positions[:,direction].round(decimals=3) >= item
+        layer_index = temp_st.positions[:,direction].round(decimals=4) >= item
         indices = []
         for iatom in range(temp_st.natom):
             if layer_index[iatom] :

@@ -8,6 +8,7 @@ import os
 import pychemia
 
 ls = os.listdir('.')
+ls.sort()
 direction = 2 # z 
 for item in ls : 
     if "POSCAR" in item : 
