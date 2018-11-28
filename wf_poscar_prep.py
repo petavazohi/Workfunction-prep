@@ -23,21 +23,6 @@ def add_layers(structure,nlayer,length,direction):
     alpha = st.lattice.alpha
     beta = st.lattice.beta
     gamma = st.lattice.gamma
-#    layers = np.ones(3)
-#    layers[direction] = nlayer
-#    a = st.lattice.a*(layers[0])
-#    b = st.lattice.b*(layers[1])
-#    c = st.lattice.c*(layers[2])
-#    newlattice = st.lattice.from_parameters_to_cell(a, b, c, alpha, beta, gamma)
-#    new_st_added_layers = pychemia.core.Structure(symbols=st.symbols, cell=newlattice.cell, positions=st.positions)
-#    new_st_added_layers = pychemia.core.Structure(symbols=[], cell=newlattice.cell, positions=[])
-#    for ilayer in range(0,nlayer):
-#        for iatom in range(st.natom):
-#            print(ilayer,iatom,st.symbols[iatom],st.positions[iatom]+st.lattice.cell[direction]*ilayer)
-#            new_st_added_layers.add_atom(st.symbols[iatom],st.positions[iatom]+st.lattice.cell[direction]*ilayer)
-#    new_st_added_layers.sort_sites()
-#    pychemia.code.vasp.write_poscar(new_st_added_layers,"added_layer.vasp",direct=True)
-#    
     n_unique_layers = len(np.unique(st.positions[:,direction]))
     structures = []
     supercell_size=[1,1,1]
@@ -76,13 +61,9 @@ if __name__ == "__main__" :
     
     
     infile = args.input
-    #infile= "SrSiO3.vasp"
     st = pychemia.code.vasp.read_poscar(infile)
-    #cs = pychemia.crystal.CrystalSymmetry(st)
-    #st = cs.refine_cell()
-    
-    
     structures = add_layers(st,nlayer=args.nlayer,length=args.length,direction=args.direction)
+    
     i = 0
     for new_st in structures :
         pychemia.code.vasp.write_poscar(filepath="POSCAR-with-vac_%i" %i,structure=new_st,direct=False)
