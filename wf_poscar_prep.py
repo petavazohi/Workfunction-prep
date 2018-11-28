@@ -23,25 +23,32 @@ def add_layers(structure,nlayer,length,direction):
     alpha = st.lattice.alpha
     beta = st.lattice.beta
     gamma = st.lattice.gamma
-    layers = np.ones(3)
-    layers[direction] = nlayer
-    a = st.lattice.a*(layers[0])
-    b = st.lattice.b*(layers[1])
-    c = st.lattice.c*(layers[2])
-    newlattice = st.lattice.from_parameters_to_cell(a, b, c, alpha, beta, gamma)
-    new_st_added_layers = pychemia.core.Structure(symbols=st.symbols, cell=newlattice.cell, positions=st.positions)
-    for ilayer in range(1,nlayer):
-        for iatom in range(st.natom) :
-            new_st_added_layers.add_atom(st.symbols[iatom],st.positions[iatom]+st.lattice.cell[direction]*ilayer)
-    new_st_added_layers.sort_sites()
-    pychemia.code.vasp.write_poscar(new_st_added_layers,"added_layer.vasp",direct=True)
-    n_unique_layers = len(np.unique(st.positions[:,direction].round(decimals=4)))
+#    layers = np.ones(3)
+#    layers[direction] = nlayer
+#    a = st.lattice.a*(layers[0])
+#    b = st.lattice.b*(layers[1])
+#    c = st.lattice.c*(layers[2])
+#    newlattice = st.lattice.from_parameters_to_cell(a, b, c, alpha, beta, gamma)
+#    new_st_added_layers = pychemia.core.Structure(symbols=st.symbols, cell=newlattice.cell, positions=st.positions)
+#    new_st_added_layers = pychemia.core.Structure(symbols=[], cell=newlattice.cell, positions=[])
+#    for ilayer in range(0,nlayer):
+#        for iatom in range(st.natom):
+#            print(ilayer,iatom,st.symbols[iatom],st.positions[iatom]+st.lattice.cell[direction]*ilayer)
+#            new_st_added_layers.add_atom(st.symbols[iatom],st.positions[iatom]+st.lattice.cell[direction]*ilayer)
+#    new_st_added_layers.sort_sites()
+#    pychemia.code.vasp.write_poscar(new_st_added_layers,"added_layer.vasp",direct=True)
+#    
+    n_unique_layers = len(np.unique(st.positions[:,direction]))
     structures = []
-
-    for i in range(1,n_unique_layers+1):
-        temp_st = new_st_added_layers.copy()
+    supercell_size=[1,1,1]
+    supercell_size[direction] =nlayer
+    st = st.supercell(size=(tuple(supercell_size)))
+    st.sort_sites()
+    structures.append(st.add_vacuum(length,direction))
+    for i in range(1,n_unique_layers):
+        temp_st = st.copy()
         item = np.unique(temp_st.positions[:,direction])[i*-1]
-        layer_index = temp_st.positions[:,direction].round(decimals=4) >= item
+        layer_index = temp_st.positions[:,direction] >= item
         indices = []
         for iatom in range(temp_st.natom):
             if layer_index[iatom] :
@@ -53,7 +60,7 @@ def add_layers(structure,nlayer,length,direction):
         c = temp_st.lattice.c
         newlattice = st.lattice.from_parameters_to_cell(a, b, c, alpha, beta, gamma)
         new_structure = pychemia.core.Structure(symbols=temp_st.symbols, cell=newlattice.cell, positions=temp_st.positions)
-        #new_structure = new_structure.add_vacuum(length,direction)
+        new_structure = new_structure.add_vacuum(length,direction)
         structures.append(new_structure)
     return structures
 
@@ -63,23 +70,22 @@ if __name__ == "__main__" :
     parser = argparse.ArgumentParser()
     parser.add_argument("--input",dest="input",type=str,help="Input file to add vacuum and layers",default="POSCAR")
     parser.add_argument("--nlayer", dest="nlayer",type=int,help="Number of layers to add",default=3)
-    parser.add_argument("--vac_length",dest="length",type=float,help="length of vaccum to add in angstroms",default=20)
+    parser.add_argument("--vac_length",dest="length",type=float,help="length of vaccum to add in angstroms",default=15)
     parser.add_argument("--direction",dest="direction",type=int,help="Direction in which the vaccum and layers will be added 0:x ,1:y, 2:z",default=2)
     args = parser.parse_args()
     
-
+    
     infile = args.input
+    #infile= "SrSiO3.vasp"
     st = pychemia.code.vasp.read_poscar(infile)
-    cs = pychemia.crystal.CrystalSymmetry(st)
-    st = cs.refine_cell()
+    #cs = pychemia.crystal.CrystalSymmetry(st)
+    #st = cs.refine_cell()
     
     
     structures = add_layers(st,nlayer=args.nlayer,length=args.length,direction=args.direction)
     i = 0
     for new_st in structures :
-        indx = new_st.reduced == 1
-        new_st.reduced[indx] = 0
-        pychemia.code.vasp.write_poscar(filepath="POSCAR-with-vac_%i" %i,structure=new_st,direct=True)
+        pychemia.code.vasp.write_poscar(filepath="POSCAR-with-vac_%i" %i,structure=new_st,direct=False)
         i += 1
     
     
