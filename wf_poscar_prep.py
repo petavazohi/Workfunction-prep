@@ -19,7 +19,11 @@ def remove_atom(st,indices):
 
 
 def add_layers(structure,nlayer,length,direction):
-    st = structure
+
+    # recreating the structure with origin being at the corner of the lattice
+    newlattice = structure.lattice.from_parameters_to_cell(structure.lattice.a, structure.lattice.b, structure.lattice.c, structure.lattice.alpha, structure.lattice.beta, structure.lattice.gamma)
+    st = pychemia.core.Structure(symbols=structure.symbols, cell=newlattice.cell, reduced=structure.reduced)
+    pychemia.code.vasp.write_poscar(st,filepath="test.vasp")
     alpha = st.lattice.alpha
     beta = st.lattice.beta
     gamma = st.lattice.gamma
